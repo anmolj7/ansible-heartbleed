@@ -1,0 +1,36 @@
+---
+- hosts: localhost
+  name: HeartBleedFix
+  tasks:
+    - name: Upgrading the packages if installed
+      apt:
+        only_upgrade: yes
+        pkg:
+          - nginx
+          - apache2
+          - postgresql
+          - openvpn
+          - php
+          - postfix
+          - monit
+          - unbound
+    - name: Restarting Services if they exist
+      service:
+        name: "{{ item }}"
+        state: restarted
+      register: unused_disable
+      failed_when: "unused_disable is failed and ('find' not in unused_disable.msg and 'found' not in unused_disable.msg)"
+      with_items:
+      - nginx
+      - apache2
+      - postgresql
+      - openvpn
+      - php
+      - postfix
+      - monit
+      - unbound
+    - name: Checking If Vuln process exist.
+      become_user: root 
+      command: lsof -n | grep ssl | grep DEL | wc -l
+      register: output
+      failed_when: "output is not failed"
